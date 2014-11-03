@@ -25,14 +25,15 @@
 <div class="col-xs-12 col-md-6">
     <p class="payment_module">
         <a title="Payer par carte bancaire" href="#" class="cartebancaire">
-            <img src =""> Payer par carte bancaire
+            <img src="modules/cartebancaire/img/cb.png" width="15%" alt=""> Payer par carte bancaire
         </a>
     </p>
-    <form id="paiement_etransanction" action = "{$link->getModuleLink('cartebancaire', 'cgi-bin/modulev500-RhE5-32bits.cgi')|escape:'html'}" METHOD = "post">
-        <input type = "hidden" name = PBX_MODE value = '1'> <!-- passage par formulaire --><br>
-        <input  type = "hidden" name = PBX_SITE value = '1999888'> <br>
-        <input  type = "hidden" name = PBX_RANG value = '98'> <br>
-        <input  type = "hidden" name = PBX_IDENTIFIANT value = '3'><br>
+    <form id="paiement_etransanction" action = "{$link->getModuleLink('cartebancaire', 'cgi-bin/modulev500-RhE5-64bits.cgi')|escape:'html'}" METHOD = "post">
+    {*<form id="paiement_etransanction" action = "https://tpeweb.paybox.com/cgi/MYpagepaiement.cgi" METHOD = "post">*}
+        <input type = "hidden" name = PBX_MODE value = '{$pbx_mode}'> <!-- passage par formulaire --><br>
+        <input  type = "hidden" name = PBX_SITE value = '{$pbx_site}'> <br>
+        <input  type = "hidden" name = PBX_RANG value = '{$pbx_rang}'> <br>
+        <input  type = "hidden" name = PBX_IDENTIFIANT value = '{$pbx_identifiant}'><br>
         <input  type = "hidden" name = PBX_TOTAL value = '{$total_price*100}'> <br>
         <input  type = "hidden" name = PBX_DEVISE value = '978'> <br>
         <input  type = "hidden" name = PBX_CMD value = '{$currentcart->id}'> <br>

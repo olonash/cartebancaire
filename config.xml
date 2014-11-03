@@ -6,8 +6,8 @@
 	<description><![CDATA[Cette module permet le payment direct par carte bancaire.]]></description>
 	<author><![CDATA[Olonash]]></author>
 	<tab><![CDATA[payments_gateways]]></tab>
-	<confirmUninstall>Voulez vous supprimer le module de payement par carte bancaire?</confirmUninstall>
-	<is_configurable>0</is_configurable>
-	<need_instance>0</need_instance>
+	<confirmUninstall>Are you sure you want to uninstall?</confirmUninstall>
+	<is_configurable>1</is_configurable>
+	<need_instance>1</need_instance>
 	<limited_countries></limited_countries>
 </module>

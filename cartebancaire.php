@@ -42,8 +42,9 @@ class cartebancaire extends PaymentModule
         $this->tab = 'payments_gateways';
         $this->version = '1.0';
         $this->author = 'Olonash';
-        $this->need_instance = 0;
-        $this->ps_versions_compliancy = array('min' => '1.5', 'max' => '1.6');
+        $this->need_instance = true;
+        $this->is_configurable= true;
+        $this->ps_versions_compliancy = array('min' => '1.5');
 
         parent::__construct();
 
@@ -70,35 +71,154 @@ class cartebancaire extends PaymentModule
     public function uninstall()
     {
         if (!parent::uninstall() ||
-            !Configuration::deleteByName('CARDBANKPAYMENT'))
+            !Configuration::deleteByName('CARDBANKPAYMENT')||
+            !Configuration::deleteByName('CARTEBANCAIRE_PBX_MODE')||
+            !Configuration::deleteByName('CARTEBANCAIRE_PBX_SITE')||
+            !Configuration::deleteByName('CARTEBANCAIRE_PBX_RANG')||
+            !Configuration::deleteByName('CARTEBANCAIRE_PBX_IDENTFIANT')
+            )
             return false;
         return true;
     }
 
+    /**
+     * display the cartebancaire form payement in the front
+     * @param $params
+     *
+     * @return mixed
+     */
     public function hookPayment($params)
     {
-        /*if (!$this->active)
-            return;
-        if (!$this->checkCurrency($params['cart']))
-            return;*/
-//print_r($this->context->cart); die;
-
         $this->context->smarty->assign(
             array(
                 'my_module_name' => Configuration::get('CARDBANKPAYMENT'),
                 'my_module_link' => $this->context->link->getModuleLink('cartebancaire', 'display'),
                 'current_customer' =>$this->context->customer,
-                'currentcart'=>$this->context->cart
+                'currentcart'=>$this->context->cart,
+                'pbx_site' => Configuration::get('CARTEBANCAIRE_PBX_SITE'),
+                'pbx_mode' => Configuration::get('CARTEBANCAIRE_PBX_MODE'),
+                'pbx_rang' => Configuration::get('CARTEBANCAIRE_PBX_RANG'),
+                'pbx_identifiant' => Configuration::get('CARTEBANCAIRE_PBX_IDENTIFIANT')
             )
         );
         return $this->display(__FILE__, 'cartebancaire.tpl');
     }
 
+    /**
+     * In the back-end, display module cartebancaire settings
+     *
+     * @return mixed
+     */
+    public function getContent(){
+        $html = "";
+        if(Tools::isSubmit('enregistrer'))        {
+            Configuration::updateValue('DATE_RETOUR', Tools::getValue('date_retour'));
+            $html .= $this->displayConfirmation($this->l('Vos paramètres ont bien été enregistrés.'));
+        }
+        return $this->displayForm();
+    }
 
+
+    public function displayForm()
+    {
+        $html = "";
+        if (Tools::isSubmit('submitCarteBancaire'))
+        {
+            Configuration::updateValue('CARTEBANCAIRE_PBX_MODE', Tools::getValue('pbx_mode'));
+            Configuration::updateValue('CARTEBANCAIRE_PBX_SITE', Tools::getValue('pbx_site'));
+            Configuration::updateValue('CARTEBANCAIRE_PBX_RANG', Tools::getValue('pbx_rang'));
+            Configuration::updateValue('CARTEBANCAIRE_PBX_IDENTIFIANT', Tools::getValue('pbx_identifiant'));
+            $html .= $this->displayConfirmation($this->l('Vos paramètres ont bien été enregistrés.'));
+        }
+        return $html .= $this->renderForm();
+    }
 
     public function hookDisplayHeader()
     {
         $this->context->controller->addCSS($this->_path.'css/style.css', 'all');
         $this->context->controller->addJS($this->_path.'js/cardbank.js', 'all');
+    }
+
+    /**
+     * prepare back-end form configuration
+     *
+     * @return string
+     */
+    protected function renderForm()
+    {
+        $fields_form = array(
+            'form' => array(
+                'input' => array(
+                    array(
+                        'type' => 'radio',
+                        'label' => $this->l('Mode'),
+                        'name' => 'pbx_mode',
+                        'values' => array(
+                            array(
+                                'id' => 'mode_test',
+                                'value' => 0,
+                                'label' => $this->l('Test')
+                            ),
+                            array(
+                                'id' => 'mode_prod',
+                                'value' => 1,
+                                'label' => $this->l('Production')
+                            ),
+                        )
+                    ),
+                    array(
+                        'type' => 'text',
+                        'label' => $this->l('Site'),
+                        'name' => 'pbx_site',
+
+                    ),
+                    array(
+                        'type' => 'text',
+                        'label' => $this->l('Rang'),
+                        'name' => 'pbx_rang',
+
+                    ),
+                    array(
+                        'type' => 'text',
+                        'label' => $this->l('Identifiant'),
+                        'name' => 'pbx_identifiant',
+                    ),
+
+
+                ),
+                'submit' => array(
+                    'title' => $this->l('Enregistrer'),
+                )
+            ),
+        );
+
+        $helper = new HelperForm();
+        $helper->show_toolbar = false;
+        $helper->table =  $this->table;
+        $lang = new Language((int)Configuration::get('PS_LANG_DEFAULT'));
+        $helper->default_form_language = $lang->id;
+        $helper->allow_employee_form_lang = Configuration::get('PS_BO_ALLOW_EMPLOYEE_FORM_LANG') ? Configuration::get('PS_BO_ALLOW_EMPLOYEE_FORM_LANG') : 0;
+        $helper->identifier = $this->identifier;
+        $helper->submit_action = 'submitCarteBancaire';
+        $helper->currentIndex = $this->context->link->getAdminLink('AdminModules', false).'&configure='.$this->name.'&tab_module='.$this->tab.'&module_name='.$this->name;
+        $helper->token = Tools::getAdminTokenLite('AdminModules');
+
+        $helper->tpl_vars = array(
+            'fields_value' => $this->getConfigFieldsValues(),
+            'languages' => $this->context->controller->getLanguages(),
+            'id_language' => $this->context->language->id
+        );
+
+        return $helper->generateForm(array($fields_form));
+    }
+
+    public function getConfigFieldsValues()
+    {
+        return array(
+            'pbx_mode' => Tools::getValue('pbx_mode', Configuration::get('CARTEBANCAIRE_PBX_MODE')),
+            'pbx_site' => Tools::getValue('pbx_site', Configuration::get('CARTEBANCAIRE_PBX_SITE')),
+            'pbx_rang' => Tools::getValue('pbx_rang', Configuration::get('CARTEBANCAIRE_PBX_RANG')),
+            'pbx_identifiant' => Tools::getValue('pbx_identifiant', Configuration::get('CARTEBANCAIRE_PBX_IDENTIFIANT')),
+        );
     }
 }
