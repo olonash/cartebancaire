@@ -1,4 +1,4 @@
 cartebancaire
 =============
 
-payment par carte bancaire
+Prestashop : Module de payment par carte bancaire 
